@@ -7,9 +7,13 @@
 
 using namespace std;
 
-void receiveFile(SOCKET serverSocket, const char* outputFile)
+void receiveFile(
+    SOCKET serverSocket,
+    const char* outputFile
+)
 {
     sockaddr_in clientAddr;
+
     int clientSize = sizeof(clientAddr);
 
     char buffer[1024];
@@ -44,13 +48,25 @@ void receiveFile(SOCKET serverSocket, const char* outputFile)
         file.write(buffer, bytesReceived);
 
         cout << "Received block size: "
-            << bytesReceived << endl;
+            << bytesReceived
+            << endl;
+
+        // RESPONSE TO CLIENT
+        sendto(
+            serverSocket,
+            "OK",
+            2,
+            0,
+            (sockaddr*)&clientAddr,
+            clientSize
+        );
     }
 
     file.close();
 
     cout << "File saved as: "
-        << outputFile << endl;
+        << outputFile
+        << endl;
 }
 
 int main()
@@ -60,6 +76,7 @@ int main()
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
         cout << "WSAStartup failed\n";
+
         return 1;
     }
 
@@ -95,7 +112,8 @@ int main()
     ) == SOCKET_ERROR)
     {
         cout << "Bind failed. Error: "
-            << WSAGetLastError() << endl;
+            << WSAGetLastError()
+            << endl;
 
         closesocket(serverSocket);
 

@@ -18,7 +18,10 @@ vector<char> readFile(const char* fileName)
     );
 }
 
-void sendEnd(SOCKET sock, sockaddr_in& serverAddr)
+void sendEnd(
+    SOCKET sock,
+    sockaddr_in& serverAddr
+)
 {
     sendto(
         sock,
@@ -28,6 +31,29 @@ void sendEnd(SOCKET sock, sockaddr_in& serverAddr)
         (sockaddr*)&serverAddr,
         sizeof(serverAddr)
     );
+}
+
+void receiveResponse(SOCKET clientSocket)
+{
+    char response[32];
+
+    int responseSize = recvfrom(
+        clientSocket,
+        response,
+        sizeof(response) - 1,
+        0,
+        nullptr,
+        nullptr
+    );
+
+    if (responseSize > 0)
+    {
+        response[responseSize] = '\0';
+
+        cout << "Server response: "
+            << response
+            << endl;
+    }
 }
 
 int main()
@@ -64,16 +90,26 @@ int main()
 
     cout << "UDP socket created\n";
 
+    // ENABLE BROADCAST
+
+    BOOL broadcastEnable = TRUE;
+
+    setsockopt(
+        clientSocket,
+        SOL_SOCKET,
+        SO_BROADCAST,
+        (char*)&broadcastEnable,
+        sizeof(broadcastEnable)
+    );
+
     sockaddr_in serverAddr;
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(644);
 
-    inet_pton(
-        AF_INET,
-        "127.0.0.1",
-        &serverAddr.sin_addr
-    );
+    // BROADCAST ADDRESS
+
+    serverAddr.sin_addr.s_addr = INADDR_BROADCAST;
 
     // WHOLE FILE
 
@@ -88,6 +124,8 @@ int main()
         (sockaddr*)&serverAddr,
         sizeof(serverAddr)
     );
+
+    receiveResponse(clientSocket);
 
     sendEnd(clientSocket, serverAddr);
 
@@ -127,6 +165,8 @@ int main()
             << " sent. Size: "
             << currentSize
             << endl;
+
+        receiveResponse(clientSocket);
 
         offset += currentSize;
     }
